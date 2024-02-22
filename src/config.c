@@ -402,9 +402,18 @@ int set_lease_from_blobmsg(struct blob_attr *ba)
 	if (!l)
 		goto err;
 
-	if ((c = tb[LEASE_ATTR_MAC]))
-		if (!ether_aton_r(blobmsg_get_string(c), &l->mac))
+	if ((c = tb[LEASE_ATTR_MAC])) {
+		char *mac = blobmsg_get_string(c);
+		{ /* in case that a lease contains multiple MAC addresses
+		   * (separated by a space), just use the first one instead of
+		   * skipping the entry altogether */
+			char *pos = mac;
+			while(*pos != '\0' && *pos != ' ') ++pos;
+			*pos = '\0';
+		}
+		if (!ether_aton_r(mac, &l->mac))
 			goto err;
+	}
 
 	if ((c = tb[LEASE_ATTR_DUID])) {
 		ssize_t len;
